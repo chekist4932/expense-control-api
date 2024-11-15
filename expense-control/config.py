@@ -1,8 +1,5 @@
 from typing import Optional, Union
-from os import getenv, path
 from pathlib import Path
-
-from dotenv import load_dotenv
 
 from pydantic import PostgresDsn, field_validator, ValidationInfo
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -38,6 +35,5 @@ class Settings(BaseSettings):
 
 def get_settings() -> Settings:
     return Settings()
-
 
 # print(get_settings())
