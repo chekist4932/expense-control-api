@@ -1,27 +1,42 @@
-from typing import Optional, Union
+from functools import lru_cache
+
+from typing import Optional
 from pathlib import Path
 
-from pydantic import PostgresDsn, field_validator, ValidationInfo
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import PostgresDsn, field_validator, ValidationInfo, IPvAnyAddress
+from pydantic_settings import BaseSettings
+from pydantic_core import MultiHostUrl
 
 BASE_DIR: Path = Path(__file__).resolve().parent.parent
 
 
-class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file="../.env", case_sensitive=True, env_file_encoding="utf-8")
+class BaseConfig(BaseSettings):
+    class Config:
+        env_file = "../.env"
+        case_sensitive = True
+        env_file_encoding = "utf-8"
+        extra = 'ignore'
 
+
+class AppSettings(BaseConfig):
+    APP_NAME: str
+    APP_IP: IPvAnyAddress
+    APP_PORT: str
+
+
+class DatabaseSettings(BaseConfig):
     DB_HOST: str
     DB_PORT: int
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
     POSTGRES_DB: str
 
-    SQLALCHEMY_DATABASE_URI: Union[Optional[PostgresDsn], Optional[str]] = None
+    DATABASE_URI: Optional[PostgresDsn] = None
 
-    @field_validator('SQLALCHEMY_DATABASE_URI', mode='before')
+    @field_validator('DATABASE_URI')
     @classmethod
-    def assemble_db_url(cls, field_value: Optional[str], values: ValidationInfo) -> PostgresDsn:
-        if isinstance(field_value, str):
+    def assemble_db_url(cls, field_value: Optional[PostgresDsn], values: ValidationInfo) -> PostgresDsn:
+        if isinstance(field_value, MultiHostUrl):
             return field_value
         return PostgresDsn.build(
             scheme="postgresql+asyncpg",
@@ -33,7 +48,14 @@ class Settings(BaseSettings):
         )
 
 
-def get_settings() -> Settings:
-    return Settings()
+@lru_cache
+def get_db_settings() -> DatabaseSettings:
+    return DatabaseSettings()
 
-# print(get_settings())
+
+@lru_cache
+def get_app_settings() -> AppSettings:
+    return AppSettings()
+
+# print(get_db_settings())
+# print(get_app_settings())
