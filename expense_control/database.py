@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker, AsyncEngine, AsyncConnection
 from sqlalchemy.exc import SQLAlchemyError
 
-from models import Base
+from expense_control.base import Base
 
 
 class DatabaseSessionManager:
@@ -13,8 +13,8 @@ class DatabaseSessionManager:
         self._sessionmaker: Optional[async_sessionmaker[AsyncSession]] = None
 
     def init(self, database_url: str) -> None:
-        self._engine = create_async_engine(database_url, echo=False)
-        self._sessionmaker = async_sessionmaker(autocommit=False, bind=self._engine)
+        self._engine = create_async_engine(database_url, echo=False, pool_pre_ping=True)
+        self._sessionmaker = async_sessionmaker(autocommit=False, bind=self._engine, class_=AsyncSession)
 
     async def close(self) -> None:
         if self._engine is None:
