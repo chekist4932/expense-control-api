@@ -12,7 +12,7 @@ BASE_DIR: Path = Path(__file__).resolve().parent.parent
 
 class BaseConfig(BaseSettings):
     class Config:
-        env_file = "../.env"
+        env_file = BASE_DIR / ".env"
         case_sensitive = True
         env_file_encoding = "utf-8"
         extra = 'ignore'
@@ -33,7 +33,7 @@ class DatabaseSettings(BaseConfig):
 
     DATABASE_URI: Optional[PostgresDsn] = None
 
-    @field_validator('DATABASE_URI')
+    @field_validator('DATABASE_URI', mode='before')
     @classmethod
     def assemble_db_url(cls, field_value: Optional[PostgresDsn], values: ValidationInfo) -> PostgresDsn:
         if isinstance(field_value, MultiHostUrl):
@@ -44,7 +44,7 @@ class DatabaseSettings(BaseConfig):
             password=values.data.get('POSTGRES_PASSWORD'),
             host=values.data.get('DB_HOST'),
             port=values.data.get('DB_PORT'),
-            path=f"/{values.data.get('POSTGRES_DB') or ''}",
+            path=f"{values.data.get('POSTGRES_DB')}",
         )
 
 
@@ -57,5 +57,5 @@ def get_db_settings() -> DatabaseSettings:
 def get_app_settings() -> AppSettings:
     return AppSettings()
 
-# print(get_db_settings())
+# print(get_db_settings().DATABASE_URI.unicode_string())
 # print(get_app_settings())
