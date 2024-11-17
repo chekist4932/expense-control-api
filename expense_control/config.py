@@ -20,8 +20,8 @@ class BaseConfig(BaseSettings):
 
 class AppSettings(BaseConfig):
     APP_NAME: str
-    APP_IP: IPvAnyAddress
-    APP_PORT: str
+    APP_IP: str
+    APP_PORT: int
 
 
 class DatabaseSettings(BaseConfig):
