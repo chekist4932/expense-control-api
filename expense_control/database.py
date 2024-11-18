@@ -7,6 +7,9 @@ from sqlalchemy.exc import SQLAlchemyError
 from expense_control.base import Base
 
 
+ERROR_MSG = "DatabaseSessionManager is not initialized"
+
+
 class DatabaseSessionManager:
     def __init__(self) -> None:
         self._engine: Optional[AsyncEngine] = None
@@ -18,7 +21,7 @@ class DatabaseSessionManager:
 
     async def close(self) -> None:
         if self._engine is None:
-            raise SQLAlchemyError("DatabaseSessionManager is not initialized")
+            raise SQLAlchemyError(ERROR_MSG)
 
         await self._engine.dispose()
         self._engine = None
@@ -27,7 +30,7 @@ class DatabaseSessionManager:
     @asynccontextmanager
     async def session(self) -> AsyncIterator[AsyncSession]:
         if self._sessionmaker is None:
-            raise SQLAlchemyError("DatabaseSessionManager is not initialized")
+            raise SQLAlchemyError(ERROR_MSG)
 
         async with self._sessionmaker() as session:
             try:
@@ -39,7 +42,7 @@ class DatabaseSessionManager:
     @asynccontextmanager
     async def connect(self) -> AsyncIterator[AsyncConnection]:
         if self._engine is None:
-            raise SQLAlchemyError("DatabaseSessionManager is not initialized")
+            raise SQLAlchemyError(ERROR_MSG)
 
         async with self._engine.begin() as connection:
             try:
