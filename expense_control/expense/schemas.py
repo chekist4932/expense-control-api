@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel
 from datetime import datetime
 
@@ -8,7 +10,8 @@ class ExpenseBase(BaseModel):
 
 
 class ExpenseUpdate(ExpenseBase):
-    ...
+    type: Optional[bool] = None
+    category_id: Optional[int] = None
 
 
 class ExpenseCreate(ExpenseBase):
