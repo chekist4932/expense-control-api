@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 
 from expense_control.category.service import CategoryService, get_category_service
 from expense_control.category.model import Category
-from expense_control.category.schemas import CategorySchema
+from expense_control.category.schemas import CategorySchema, CategoryCreate
 
 category_router = APIRouter(prefix='/category', tags=['category'])
 
@@ -20,3 +20,9 @@ async def get_category_by_id(
 async def get_category_all(category_servie: CategoryService = Depends(get_category_service)
                            ) -> Optional[list[Category]]:
     return await category_servie.get_all()
+
+
+@category_router.post('/', response_model=CategorySchema)
+async def create_category(category: CategoryCreate, category_servie: CategoryService = Depends(get_category_service)
+                           ) -> Optional[Category]:
+    return await category_servie.create(category)
