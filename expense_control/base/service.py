@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 from sqlalchemy import select, ScalarResult, Row, RowMapping, Result
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError
 
 from expense_control.base.model import Base
 
@@ -30,3 +31,19 @@ class BaseService(Generic[Model, CreateSchema, UpdateSchema]):
         if not (objs := objs.scalars().all()):
             raise HTTPException(status_code=404, detail='Not found')
         return [obj for obj in objs]
+
+    async def create(self, item_body: CreateSchema) -> Model:
+        obj = self.model(**item_body.model_dump())
+
+        self.database_session.add(obj)
+        try:
+            await self.database_session.commit()
+        except IntegrityError as e:
+            await self.database_session.rollback()
+            if "UniqueViolationError" in str(e):
+                raise HTTPException(status_code=409, detail="Conflict Error")
+            else:
+                raise e
+        await self.database_session.refresh(obj)
+
+        return obj
