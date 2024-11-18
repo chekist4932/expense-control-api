@@ -5,13 +5,16 @@ from pydantic import BaseModel
 
 from sqlalchemy import select, ScalarResult, Row, RowMapping, Result
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, NoResultFound
+
+from asyncpg.exceptions import ForeignKeyViolationError
 
 from expense_control.base.model import Base
 
 Model = TypeVar('Model', bound=Base)
 CreateSchema = TypeVar('CreateSchema', bound=BaseModel)
 UpdateSchema = TypeVar('UpdateSchema', bound=BaseModel)
+FilterSchema = TypeVar('FilterSchema', bound=BaseModel)
 
 
 class BaseService(Generic[Model, CreateSchema, UpdateSchema]):
@@ -22,14 +25,14 @@ class BaseService(Generic[Model, CreateSchema, UpdateSchema]):
     async def get_by_id(self, item_id: int) -> Optional[Model]:
         obj: Optional[Model] = await self.database_session.get(self.model, item_id)
         if obj is None:
-            raise HTTPException(status_code=404, detail='Not found')
+            raise NoResultFound
         return obj
 
     async def get_all(self) -> Optional[list[Model]]:
         query = select(self.model)
         objs = await self.database_session.execute(query)
         if not (objs := objs.scalars().all()):
-            raise HTTPException(status_code=404, detail='Not found')
+            raise NoResultFound
         return [obj for obj in objs]
 
     async def create(self, item_body: CreateSchema) -> Model:
@@ -38,12 +41,9 @@ class BaseService(Generic[Model, CreateSchema, UpdateSchema]):
         self.database_session.add(obj)
         try:
             await self.database_session.commit()
-        except IntegrityError as e:
+        except IntegrityError:
             await self.database_session.rollback()
-            if "UniqueViolationError" in str(e):
-                raise HTTPException(status_code=409, detail="Conflict Error")
-            else:
-                raise e
+            raise
         await self.database_session.refresh(obj)
 
         return obj
