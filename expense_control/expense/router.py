@@ -44,6 +44,6 @@ async def update_expense_full(expense_id: int, expense: ExpenseCreate,
 
 
 @expense_router.delete('/{expense_id}', status_code=204)
-async def delete_category(expense_id: int,
-                          expense_servie: ExpenseService = Depends(get_expense_service)) -> None:
+async def delete_expense(expense_id: int,
+                         expense_servie: ExpenseService = Depends(get_expense_service)) -> None:
     return await expense_servie.delete(expense_id)
