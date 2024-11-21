@@ -1,12 +1,7 @@
 from typing import (TypeVar,
                     Generic,
                     Optional,
-                    Type,
-                    Callable,
-                    ParamSpec,
-                    Any,
-                    Coroutine)
-from functools import wraps
+                    Type)
 
 from pydantic import BaseModel
 
@@ -23,45 +18,11 @@ UpdateSchema = TypeVar('UpdateSchema', bound=BaseModel)
 FilterSchema = TypeVar('FilterSchema', bound=BaseModel)
 
 
-# Service = TypeVar("Service")
-#
-# Schema = ParamSpec("Schema", bound=BaseModel)
-
-
-# def inject_obj_schema(
-#         method: Callable[[Service, Model, UpdateSchema | CreateSchema], Model]
-# ) -> Callable[[Service, int, UpdateSchema | CreateSchema], Coroutine]:
-#     @wraps(method)
-#     async def wrapper(self: Service, obj_id: int, obj: UpdateSchema | CreateSchema
-#                       ) -> Coroutine[Service, Model, UpdateSchema | CreateSchema]:
-#         db_obj: Optional[Model] = await self.database_session.get(self.model, obj_id)
-#         if not db_obj:
-#             raise NoResultFound
-#         return await method(self, db_obj, obj)
-#
-#     return wrapper
-
-
-# def inject_obj_id(
-#         method):
-#     @wraps(method)
-#     async def wrapper(self: Service, obj_id: int, *args, **kwargs
-#                       ):
-#         db_obj: Optional[Model] = await self.database_session.get(self.model, obj_id)
-#         if not db_obj:
-#             raise NoResultFound
-#
-#         return await method(self, db_obj, *args, **kwargs)
-#
-#     return wrapper
-
-
 class BaseService(Generic[Model, CreateSchema, UpdateSchema]):
     def __init__(self, model: Type[Model], database_session: AsyncSession):
         self.model = model
         self.database_session = database_session
 
-    # @inject_obj_id
     async def get_by_id(self, obj_id: int) -> Model:
         db_obj: Optional[Model] = await self.database_session.get(self.model, obj_id)
         if not db_obj:
@@ -86,11 +47,8 @@ class BaseService(Generic[Model, CreateSchema, UpdateSchema]):
 
         return db_obj
 
-    # @inject_obj_id
     async def update(self, obj_id: int, obj: UpdateSchema | CreateSchema) -> Model:
-        db_obj: Optional[Model] = await self.database_session.get(self.model, obj_id)
-        if not db_obj:
-            raise NoResultFound
+        db_obj = await self.get_by_id(obj_id)
         for key, value in obj.dict(exclude_none=True).items():
             setattr(db_obj, key, value)
 
@@ -99,10 +57,7 @@ class BaseService(Generic[Model, CreateSchema, UpdateSchema]):
 
         return db_obj
 
-    # @inject_obj_id
     async def delete(self, obj_id: int) -> None:
-        db_obj: Optional[Model] = await self.database_session.get(self.model, obj_id)
-        if not db_obj:
-            raise NoResultFound
+        db_obj = await self.get_by_id(obj_id)
         await self.database_session.delete(db_obj)
         await self.database_session.commit()
