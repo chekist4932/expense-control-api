@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 from sqlalchemy import select, ScalarResult, Row, RowMapping, Result
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.exc import IntegrityError, NoResultFound
+from sqlalchemy.exc import DatabaseError, NoResultFound
 
 from expense_control.base.model import Base
 
@@ -38,7 +38,7 @@ class BaseService(Generic[Model, CreateSchema, UpdateSchema]):
         self.database_session.add(db_obj)
         try:
             await self.database_session.commit()
-        except IntegrityError:
+        except DatabaseError:
             await self.database_session.rollback()
             raise
         await self.database_session.refresh(db_obj)
@@ -52,7 +52,7 @@ class BaseService(Generic[Model, CreateSchema, UpdateSchema]):
                 setattr(db_obj, key, value)
             try:
                 await self.database_session.commit()
-            except IntegrityError:
+            except DatabaseError:
                 await self.database_session.rollback()
                 raise
             await self.database_session.refresh(db_obj)
