@@ -44,3 +44,9 @@ async def update_category_full(category_id: int, category: CategoryCreate,
                                category_servie: CategoryService = Depends(get_category_service)
                                ) -> Optional[Category]:
     return await category_servie.update(category_id, category)
+
+
+@category_router.delete('/{category_id}', status_code=204)
+async def delete_category(category_id: int,
+                          category_service: CategoryService = Depends(get_category_service)) -> None:
+    return await category_service.delete(category_id)

@@ -1,13 +1,10 @@
 from typing import TypeVar, Generic, Optional, Type, Sequence, Any
 
-from fastapi.exceptions import HTTPException
 from pydantic import BaseModel
 
 from sqlalchemy import select, ScalarResult, Row, RowMapping, Result
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError, NoResultFound
-
-from asyncpg.exceptions import ForeignKeyViolationError
 
 from expense_control.base.model import Base
 
@@ -60,4 +57,13 @@ class BaseService(Generic[Model, CreateSchema, UpdateSchema]):
                 raise
             await self.database_session.refresh(db_obj)
             return db_obj
+        raise NoResultFound
+
+    async def delete(self, obj_id: int) -> None:
+        db_obj = await self.database_session.get(self.model, obj_id)
+        print(db_obj)
+        if db_obj:
+            await self.database_session.delete(db_obj)
+            await self.database_session.commit()
+            return
         raise NoResultFound
