@@ -61,9 +61,8 @@ class BaseService(Generic[Model, CreateSchema, UpdateSchema]):
 
     async def delete(self, obj_id: int) -> None:
         db_obj = await self.database_session.get(self.model, obj_id)
-        print(db_obj)
-        if db_obj:
-            await self.database_session.delete(db_obj)
-            await self.database_session.commit()
-            return
-        raise NoResultFound
+        if not db_obj:
+            raise NoResultFound
+
+        await self.database_session.delete(db_obj)
+        await self.database_session.commit()
