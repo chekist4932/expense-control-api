@@ -1,4 +1,11 @@
-from typing import TypeVar, Generic, Optional, Type, Callable, Sequence, Any, ParamSpec, Concatenate, overload
+from typing import (TypeVar,
+                    Generic,
+                    Optional,
+                    Type,
+                    Callable,
+                    ParamSpec,
+                    Any,
+                    Coroutine)
 from functools import wraps
 
 from pydantic import BaseModel
@@ -15,25 +22,38 @@ CreateSchema = TypeVar('CreateSchema', bound=BaseModel)
 UpdateSchema = TypeVar('UpdateSchema', bound=BaseModel)
 FilterSchema = TypeVar('FilterSchema', bound=BaseModel)
 
-Service = TypeVar("Service")
-P = ParamSpec("P")
+
+# Service = TypeVar("Service")
+#
+# Schema = ParamSpec("Schema", bound=BaseModel)
 
 
-@overload
-def inject_obj(
-        method: Callable[Concatenate[Service, Model, P], Model]
-) -> Callable[Concatenate[Service, int, P], Model]: ...
+# def inject_obj_schema(
+#         method: Callable[[Service, Model, UpdateSchema | CreateSchema], Model]
+# ) -> Callable[[Service, int, UpdateSchema | CreateSchema], Coroutine]:
+#     @wraps(method)
+#     async def wrapper(self: Service, obj_id: int, obj: UpdateSchema | CreateSchema
+#                       ) -> Coroutine[Service, Model, UpdateSchema | CreateSchema]:
+#         db_obj: Optional[Model] = await self.database_session.get(self.model, obj_id)
+#         if not db_obj:
+#             raise NoResultFound
+#         return await method(self, db_obj, obj)
+#
+#     return wrapper
 
 
-def inject_obj(method: Callable[[Service, Model, P], Model]):
-    @wraps(method)
-    async def wrapper(self: Service, obj_id: int, *args: P.args, **kwargs: P.kwargs) -> Model:
-        db_obj: Optional[Model] = await self.database_session.get(self.model, obj_id)
-        if not db_obj:
-            raise NoResultFound
-        return await method(self, db_obj, *args, **kwargs)
-
-    return wrapper
+# def inject_obj_id(
+#         method):
+#     @wraps(method)
+#     async def wrapper(self: Service, obj_id: int, *args, **kwargs
+#                       ):
+#         db_obj: Optional[Model] = await self.database_session.get(self.model, obj_id)
+#         if not db_obj:
+#             raise NoResultFound
+#
+#         return await method(self, db_obj, *args, **kwargs)
+#
+#     return wrapper
 
 
 class BaseService(Generic[Model, CreateSchema, UpdateSchema]):
@@ -41,8 +61,11 @@ class BaseService(Generic[Model, CreateSchema, UpdateSchema]):
         self.model = model
         self.database_session = database_session
 
-    @inject_obj
-    async def get_by_id(self, db_obj: Model) -> Model:
+    # @inject_obj_id
+    async def get_by_id(self, obj_id: int) -> Model:
+        db_obj: Optional[Model] = await self.database_session.get(self.model, obj_id)
+        if not db_obj:
+            raise NoResultFound
         return db_obj
 
     async def get_all(self) -> Optional[list[Model]]:
@@ -63,8 +86,11 @@ class BaseService(Generic[Model, CreateSchema, UpdateSchema]):
 
         return db_obj
 
-    @inject_obj
-    async def update(self, db_obj: Model, obj: UpdateSchema | CreateSchema) -> Model:
+    # @inject_obj_id
+    async def update(self, obj_id: int, obj: UpdateSchema | CreateSchema) -> Model:
+        db_obj: Optional[Model] = await self.database_session.get(self.model, obj_id)
+        if not db_obj:
+            raise NoResultFound
         for key, value in obj.dict(exclude_none=True).items():
             setattr(db_obj, key, value)
 
@@ -73,7 +99,10 @@ class BaseService(Generic[Model, CreateSchema, UpdateSchema]):
 
         return db_obj
 
-    @inject_obj
-    async def delete(self, db_obj: Model) -> None:
+    # @inject_obj_id
+    async def delete(self, obj_id: int) -> None:
+        db_obj: Optional[Model] = await self.database_session.get(self.model, obj_id)
+        if not db_obj:
+            raise NoResultFound
         await self.database_session.delete(db_obj)
         await self.database_session.commit()
