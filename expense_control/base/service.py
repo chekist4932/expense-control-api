@@ -1,4 +1,4 @@
-from typing import TypeVar, Generic, Optional, Type, Callable, Sequence, Any
+from typing import TypeVar, Generic, Optional, Type, Callable, Sequence, Any, ParamSpec, Concatenate, overload
 from functools import wraps
 
 from pydantic import BaseModel
@@ -10,14 +10,24 @@ from sqlalchemy.exc import NoResultFound
 from expense_control.base.model import Base
 
 Model = TypeVar('Model', bound=Base)
+
 CreateSchema = TypeVar('CreateSchema', bound=BaseModel)
 UpdateSchema = TypeVar('UpdateSchema', bound=BaseModel)
 FilterSchema = TypeVar('FilterSchema', bound=BaseModel)
 
+Service = TypeVar("Service")
+P = ParamSpec("P")
 
-def inject_obj(method: Callable):
+
+@overload
+def inject_obj(
+        method: Callable[Concatenate[Service, Model, P], Model]
+) -> Callable[Concatenate[Service, int, P], Model]: ...
+
+
+def inject_obj(method: Callable[[Service, Model, P], Model]):
     @wraps(method)
-    async def wrapper(self, obj_id: int, *args, **kwargs) -> Optional[Model]:
+    async def wrapper(self: Service, obj_id: int, *args: P.args, **kwargs: P.kwargs) -> Model:
         db_obj: Optional[Model] = await self.database_session.get(self.model, obj_id)
         if not db_obj:
             raise NoResultFound
@@ -32,7 +42,7 @@ class BaseService(Generic[Model, CreateSchema, UpdateSchema]):
         self.database_session = database_session
 
     @inject_obj
-    async def get_by_id(self, db_obj: Model) -> Optional[Model]:
+    async def get_by_id(self, db_obj: Model) -> Model:
         return db_obj
 
     async def get_all(self) -> Optional[list[Model]]:
