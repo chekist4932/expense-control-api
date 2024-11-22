@@ -27,3 +27,11 @@ class ExpenseSchema(ExpenseBase):
 
     class Config:
         from_attributes = True
+
+
+class ExpenseItem(BaseModel):
+    id: int
+    type: bool
+    category: str
+    amount: float
+    timestamp: datetime
