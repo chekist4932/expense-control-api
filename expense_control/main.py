@@ -26,9 +26,10 @@ app.include_router(expense_router)
 
 
 if __name__ == '__main__':
-    run(app=app,
+    run(app='expense_control.main:app',
         host=get_app_settings().APP_IP,
         port=get_app_settings().APP_PORT,
         reload=True,
-        proxy_headers=True
+        proxy_headers=True,
+        # workers=2
         )
