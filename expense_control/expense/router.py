@@ -28,17 +28,17 @@ async def create_expense(expense: ExpenseCreate, expense_servie: ExpenseService 
     return await expense_servie.create(expense)
 
 
-@expense_router.patch('/{expense_id}', response_model=ExpenseSchema)
+@expense_router.patch('/{expense_id}', status_code=204)
 async def update_expense(expense_id: int, expense: ExpenseUpdate,
                          expense_servie: ExpenseService = Depends(get_expense_service)
-                         ) -> Optional[ExpenseSchema]:
+                         ) -> None:
     return await expense_servie.update(expense_id, expense)
 
 
-@expense_router.put('/{expense_id}', response_model=ExpenseSchema)
+@expense_router.put('/{expense_id}', status_code=204)
 async def update_expense_full(expense_id: int, expense: ExpenseCreate,
                               expense_servie: ExpenseService = Depends(get_expense_service)
-                              ) -> Optional[ExpenseSchema]:
+                              ) -> None:
     return await expense_servie.update(expense_id, expense)
 
 

@@ -52,16 +52,13 @@ class BaseService(Generic[Model, CreateSchema, UpdateSchema]):
 
         return self.entity_schema.from_orm(table_obj)
 
-    async def update(self, obj_id: int, obj: UpdateSchema | CreateSchema) -> EntitySchema:
+    async def update(self, obj_id: int, obj: UpdateSchema | CreateSchema) -> None:
         table_obj = await self.get_by_id(obj_id, type_ret=False)
-
         for key, value in obj.dict(exclude_none=True).items():
             setattr(table_obj, key, value)
 
         await self.database_session.commit()
         await self.database_session.refresh(table_obj)
-
-        return self.entity_schema.from_orm(table_obj)
 
     async def delete(self, obj_id: int) -> None:
         table_obj = await self.get_by_id(obj_id, type_ret=False)

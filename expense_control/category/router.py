@@ -31,17 +31,17 @@ async def create_category(category: CategoryCreate, category_servie: CategorySer
     return await category_servie.create(category)
 
 
-@category_router.patch('/{category_id}', response_model=CategorySchema)
+@category_router.patch('/{category_id}', status_code=204)
 async def update_category(category_id: int, category: CategoryUpdate,
                           category_servie: CategoryService = Depends(get_category_service)
-                          ) -> Optional[CategorySchema]:
+                          ) -> None:
     return await category_servie.update(category_id, category)
 
 
-@category_router.put('/{category_id}', response_model=CategorySchema)
+@category_router.put('/{category_id}', status_code=204)
 async def update_category_full(category_id: int, category: CategoryCreate,
                                category_servie: CategoryService = Depends(get_category_service)
-                               ) -> Optional[CategorySchema]:
+                               ) -> None:
     return await category_servie.update(category_id, category)
 
 
