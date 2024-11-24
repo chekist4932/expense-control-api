@@ -16,12 +16,12 @@ from expense_control.category.model import Category
 
 class ExpenseService(BaseService[Expense, ExpenseCreate, ExpenseUpdate]):
     def __init__(self, database_session: AsyncSession):
-        super(ExpenseService, self).__init__(Expense, ExpenseSchema, database_session)
+        super().__init__(Expense, ExpenseSchema, database_session)
 
     @override
     async def get_by_id(self, obj_id: int, type_ret: bool = True) -> ExpenseItem | Expense:
         if not type_ret:
-            return await super(ExpenseService, self).get_by_id(obj_id, False)
+            return await super().get_by_id(obj_id, False)
 
         query = select(self.model.id,
                        self.model.type,

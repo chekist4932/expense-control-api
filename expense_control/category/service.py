@@ -10,7 +10,7 @@ from expense_control.category.schemas import CategoryCreate, CategoryUpdate, Cat
 
 class CategoryService(BaseService[Category, CategoryCreate, CategoryUpdate]):
     def __init__(self, database_session: AsyncSession):
-        super(CategoryService, self).__init__(Category, CategorySchema, database_session)
+        super().__init__(Category, CategorySchema, database_session)
 
 
 def get_category_service(database_session: AsyncSession = Depends(get_async_session)):
