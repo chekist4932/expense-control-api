@@ -1,4 +1,6 @@
-from uvicorn import run
+import asyncio
+
+from uvicorn import Config, Server
 
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
@@ -25,11 +27,17 @@ app.include_router(category_router)
 app.include_router(expense_router)
 
 
-if __name__ == '__main__':
-    run(app='expense_control.main:app',
+async def run_app():
+    config = Config(
+        app="expense_control.main:app",
         host=get_app_settings().APP_IP,
         port=get_app_settings().APP_PORT,
         reload=True,
         proxy_headers=True,
-        # workers=2
-        )
+    )
+    server = Server(config)
+    await server.serve()
+
+
+if __name__ == "__main__":
+    asyncio.run(run_app())
