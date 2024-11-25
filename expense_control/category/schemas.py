@@ -1,6 +1,8 @@
 from typing import Optional
 from pydantic import BaseModel, field_validator, ValidationInfo
 
+from expense_control.base.schemas import BaseFilter
+
 
 class CategoryBase(BaseModel):
     name: str
@@ -29,3 +31,13 @@ class CategorySchema(CategoryBase):
 
     class Config:
         from_attributes = True
+
+
+class CategoryFilter(BaseFilter):
+    name: Optional[str] = None
+    rate: Optional[dict[str, int]] = None
+
+    @field_validator('rate', mode='before')
+    @classmethod
+    def validate_rate_operand(cls, field_value: str, values: ValidationInfo) -> dict[str, int]:
+        return cls.validate_operand_field(field_value)
