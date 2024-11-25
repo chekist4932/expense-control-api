@@ -1,13 +1,15 @@
-from typing import Optional
+from typing import Optional, Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 
 from expense_control.category.service import CategoryService, GetCategoryService
 
 from expense_control.category.schemas import (
     CategorySchema,
     CategoryCreate,
-    CategoryUpdate)
+    CategoryUpdate,
+    CategoryFilter
+)
 
 category_router = APIRouter(prefix='/category', tags=['category'])
 
@@ -20,13 +22,15 @@ async def get_category_by_id(
 
 
 @category_router.get('/', response_model=list[CategorySchema])
-async def get_category_all(category_servie: CategoryService = Depends(GetCategoryService(CategorySchema))
+async def get_category_all(filters: Annotated[CategoryFilter, Query()],
+                           category_servie: CategoryService = Depends(GetCategoryService(CategorySchema))
                            ) -> Optional[list[CategorySchema]]:
-    return await category_servie.get_all()
+    return await category_servie.get_all(filters)
 
 
 @category_router.post('/', response_model=CategorySchema)
-async def create_category(category: CategoryCreate, category_servie: CategoryService = Depends(GetCategoryService(CategorySchema))
+async def create_category(category: CategoryCreate,
+                          category_servie: CategoryService = Depends(GetCategoryService(CategorySchema))
                           ) -> Optional[CategorySchema]:
     return await category_servie.create(category)
 

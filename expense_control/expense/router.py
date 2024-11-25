@@ -1,10 +1,15 @@
-from typing import Optional
+from typing import Optional, Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 
 from expense_control.expense.service import ExpenseService, GetExpenseService
 from expense_control.expense.schemas import (
-    ExpenseSchema, ExpenseCreate, ExpenseUpdate, ExpenseItem)
+    ExpenseSchema,
+    ExpenseCreate,
+    ExpenseUpdate,
+    ExpenseItem,
+    ExpenseFilter
+)
 
 expense_router = APIRouter(prefix='/expense', tags=['expense'])
 
@@ -17,9 +22,10 @@ async def get_expense_by_id(
 
 
 @expense_router.get('/', response_model=list[ExpenseItem])
-async def get_expense_all(expense_servie: ExpenseService = Depends(GetExpenseService(ExpenseItem))
+async def get_expense_all(filters: Annotated[ExpenseFilter, Query()],
+                          expense_servie: ExpenseService = Depends(GetExpenseService(ExpenseItem))
                           ) -> Optional[list[ExpenseItem]]:
-    return await expense_servie.get_all()
+    return await expense_servie.get_all(filters)
 
 
 @expense_router.post('/', response_model=ExpenseSchema)
