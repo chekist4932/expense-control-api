@@ -22,7 +22,7 @@ FilterSchema = TypeVar('FilterSchema', bound=BaseModel)
 
 
 class BaseService(Generic[Model, CreateSchema, UpdateSchema]):
-    def __init__(self, model: Type[Model], entity_schema: Type[EntitySchema], database_session: AsyncSession):
+    def __init__(self, model: Type[Model], entity_schema: Optional[Type[EntitySchema]], database_session: AsyncSession):
         self.model = model
         self.database_session = database_session
         self.entity_schema = entity_schema
