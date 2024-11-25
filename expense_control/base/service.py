@@ -5,7 +5,7 @@ from typing import (TypeVar,
 
 from pydantic import BaseModel
 
-from sqlalchemy import select
+from sqlalchemy import select, and_, BinaryExpression
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import NoResultFound
 
@@ -34,8 +34,12 @@ class BaseService(Generic[Model, CreateSchema, UpdateSchema]):
             raise NoResultFound
         return self.entity_schema.from_orm(table_obj) if type_ret else table_obj
 
-    async def get_all(self) -> Optional[list[EntitySchema]]:
+    async def get_all(self, filters: FilterSchema or None = None) -> Optional[list[EntitySchema]]:
         query = select(self.model)
+
+        if conditions := await self.get_conditions(filters):
+            query = query.where(and_(*conditions))
+
         result_objs = await self.database_session.execute(query)
 
         if not (result_objs := result_objs.scalars().all()):
@@ -65,3 +69,18 @@ class BaseService(Generic[Model, CreateSchema, UpdateSchema]):
 
         await self.database_session.delete(table_obj)
         await self.database_session.commit()
+
+    async def get_conditions(self, filters: FilterSchema) -> list[BinaryExpression] or list:
+        conditions = []
+        for field, value in filters.model_dump(exclude_none=True).items():
+            if isinstance(value, dict):
+                column = getattr(self.model, field)
+                for operand, val in value.items():
+                    if operand == 'gt':
+                        conditions.append(column > val)
+                    elif operand == 'lt':
+                        conditions.append(column < val)
+            elif hasattr(self.model, field):
+                column = getattr(self.model, field)
+                conditions.append(column == value)
+        return conditions
