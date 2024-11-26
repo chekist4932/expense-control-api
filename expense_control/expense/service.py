@@ -12,7 +12,9 @@ from expense_control.database import get_async_session
 from expense_control.base import BaseService
 from expense_control.expense.model import Expense
 from expense_control.expense.schemas import (
-    ExpenseCreate, ExpenseUpdate, ExpenseItem, ExpenseSchema, ExpenseFilter)
+    ExpenseCreate, ExpenseUpdate, ExpenseItem, ExpenseSchema)
+
+from expense_control.expense.filters import ExpenseFilter
 
 from expense_control.category.model import Category
 
@@ -22,7 +24,7 @@ class ExpenseService(BaseService[Expense, ExpenseCreate, ExpenseUpdate]):
         super().__init__(Expense, entity_schema, database_session)
 
     @override
-    async def get_all(self, filters: ExpenseFilter or None = None) -> list[ExpenseItem]:
+    async def get_all(self, filters: ExpenseFilter | None = None) -> list[ExpenseItem]:
 
         query = select(self.model.id,
                        self.model.type,

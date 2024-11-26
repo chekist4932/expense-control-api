@@ -7,9 +7,10 @@ from expense_control.expense.schemas import (
     ExpenseSchema,
     ExpenseCreate,
     ExpenseUpdate,
-    ExpenseItem,
-    ExpenseFilter
+    ExpenseItem
 )
+
+from expense_control.expense.filters import ExpenseFilter
 
 expense_router = APIRouter(prefix='/expense', tags=['expense'])
 

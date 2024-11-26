@@ -1,7 +1,4 @@
-from typing import Optional
 from pydantic import BaseModel, field_validator, ValidationInfo
-
-from expense_control.base.schemas import BaseFilter
 
 
 class CategoryBase(BaseModel):
@@ -11,15 +8,15 @@ class CategoryBase(BaseModel):
     @field_validator('rate', mode='after')
     @classmethod
     def validate_rate(cls, field_value: int, values: ValidationInfo) -> int:
-        if not (1 <= field_value <= 10):  # Проверяем диапазон 1–10
-            raise ValueError("The 'rate' must be between 1 and 10 inclusive")
+        if not (1 <= field_value <= 10):
+            raise ValueError("Rate must be >= 1 and <= 10")
 
         return field_value
 
 
 class CategoryUpdate(CategoryBase):
-    name: Optional[str] = None
-    rate: Optional[int] = None
+    name: str | None = None
+    rate: int | None = None
 
 
 class CategoryCreate(CategoryBase):
@@ -31,13 +28,3 @@ class CategorySchema(CategoryBase):
 
     class Config:
         from_attributes = True
-
-
-class CategoryFilter(BaseFilter):
-    name: Optional[str] = None
-    rate: Optional[dict[str, int]] = None
-
-    @field_validator('rate', mode='before')
-    @classmethod
-    def validate_rate_operand(cls, field_value: str, values: ValidationInfo) -> dict[str, int]:
-        return cls.validate_operand_field(field_value)

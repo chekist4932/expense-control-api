@@ -7,9 +7,11 @@ from expense_control.category.service import CategoryService, GetCategoryService
 from expense_control.category.schemas import (
     CategorySchema,
     CategoryCreate,
-    CategoryUpdate,
-    CategoryFilter
+    CategoryUpdate
 )
+
+from expense_control.category.filters import CategoryFilter
+
 
 category_router = APIRouter(prefix='/category', tags=['category'])
 
