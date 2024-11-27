@@ -1,11 +1,7 @@
-from datetime import timedelta
-
 from fastapi import Depends
-from sqlalchemy import select, and_, BinaryExpression, func
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.exc import NoResultFound
 
-from typing import override, Optional
+from typing import override
 
 from expense_control.database import get_async_session
 
@@ -14,63 +10,36 @@ from expense_control.expense.model import Expense
 from expense_control.expense.schemas import (
     ExpenseCreate, ExpenseUpdate, ExpenseItem, ExpenseSchema)
 
-from expense_control.expense.filters import ExpenseFilter
+from expense_control.expense.schemas import ExpenseFilter
+from expense_control.expense.repository import ExpenseRepository
+from expense_control.expense.mapper import ExpenseMapper
+from expense_control.expense.condition import ExpenseConditionBuilder
 
-from expense_control.category.model import Category
 
-
-class ExpenseService(BaseService[Expense, ExpenseCreate, ExpenseUpdate]):
-    def __init__(self, entity_schema: Optional[ExpenseSchema or ExpenseItem], database_session: AsyncSession):
-        super().__init__(Expense, entity_schema, database_session)
-
-    @override
-    async def get_all(self, filters: ExpenseFilter | None = None) -> list[ExpenseItem]:
-
-        query = select(self.model.id,
-                       self.model.type,
-                       self.model.amount,
-                       self.model.timestamp,
-                       self.model.category_id,
-                       Category.name.label('category')).join(Category)
-
-        if conditions := await self.get_conditions(filters):
-            query = query.where(and_(*conditions))
-
-        result_objs = await self.database_session.execute(query)
-
-        if not (result_objs := result_objs.mappings().all()):
-            raise NoResultFound
-
-        return [self.entity_schema(**res_obj) for res_obj in result_objs]
+class ExpenseService(BaseService[Expense, ExpenseCreate, ExpenseUpdate, ExpenseItem | ExpenseSchema, ExpenseFilter]):
+    def __init__(self,
+                 repository: ExpenseRepository,
+                 mapper: ExpenseMapper,
+                 condition_builder: ExpenseConditionBuilder):
+        super().__init__(repository, mapper, condition_builder)
 
     @override
-    async def get_conditions(self, filters: ExpenseFilter) -> list[BinaryExpression] or list:
-        conditions = []
-        for field, value in filters.model_dump(exclude_none=True).items():
-            if field == 'days':
-                column = getattr(self.model, 'timestamp')
-                conditions.append(column >= func.current_timestamp() - timedelta(days=value))
-            elif isinstance(value, dict):
-                column = getattr(self.model, field)
-                for operand, val in value.items():
-                    if operand == 'gt':
-                        conditions.append(column > val)
-                    elif operand == 'lt':
-                        conditions.append(column < val)
-            elif hasattr(self.model, field):
-                column = getattr(self.model, field)
-                conditions.append(column == value)
-            elif 'category' in field:
-                column = getattr(Category, 'name')
-                conditions.append(column == value)
-        return conditions
+    async def get_all(self, filters: ExpenseFilter = None) -> list[ExpenseItem]:
+        conditions = await self.condition_builder.build_condition(filters) if filters else []
+        result_objs = await self.repository.get_all(conditions)
+        return self.mapper.to_schemas(result_objs)
 
 
 class GetExpenseService:
     """Get ExpenseService object with entity schema we needed"""
 
-    def __init__(self, entity_schema: Optional[ExpenseSchema or ExpenseItem] = None) -> None:
+    def __init__(self, entity_schema: ExpenseSchema | ExpenseItem = None) -> None:
         self.entity_schema = entity_schema
 
-    def __call__(self, database_session: AsyncSession = Depends(get_async_session)) -> ExpenseService:
-        return ExpenseService(self.entity_schema, database_session)
+    def __call__(self, session: AsyncSession = Depends(get_async_session)) -> ExpenseService:
+        repository = ExpenseRepository(Expense, session)  # Передается неявно
+        mapper = ExpenseMapper(self.entity_schema)  # Передается неявно. И что делать, когда схема None
+        condition_builder = ExpenseConditionBuilder(Expense)  # Передается неявно
+        return ExpenseService(repository, mapper, condition_builder)
+
+# Мб создать файлы mapper.py, repository.py и move filters.py -> condition.py

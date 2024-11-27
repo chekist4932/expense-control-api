@@ -1,5 +1,7 @@
 from pydantic import BaseModel, field_validator, ValidationInfo
 
+from expense_control.base.schemas import BaseFilter, ConditionsInt
+
 
 class CategoryBase(BaseModel):
     name: str
@@ -28,3 +30,8 @@ class CategorySchema(CategoryBase):
 
     class Config:
         from_attributes = True
+
+
+class CategoryFilter(BaseFilter):
+    name: str | None = None
+    rate: ConditionsInt | None = None

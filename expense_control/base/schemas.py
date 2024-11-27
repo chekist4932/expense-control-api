@@ -14,12 +14,12 @@ class Conditions(BaseModel):
 
 
 class ConditionsInt(Conditions):
-    gt: int | None
+    gt: int | None = None
     lt: int | None
 
 
 class ConditionsFloat(Conditions):
-    gt: float | None
+    gt: float | None = None
     lt: float | None
 
 

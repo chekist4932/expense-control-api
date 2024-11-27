@@ -1,86 +1,42 @@
-from typing import (TypeVar,
-                    Generic,
-                    Optional,
-                    Type)
+from typing import Generic
 
-from pydantic import BaseModel
-
-from sqlalchemy import select, and_, BinaryExpression
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.exc import NoResultFound
-
-from expense_control.base.model import Base
-
-Model = TypeVar('Model', bound=Base)
-
-CreateSchema = TypeVar('CreateSchema', bound=BaseModel)
-UpdateSchema = TypeVar('UpdateSchema', bound=BaseModel)
-
-EntitySchema = TypeVar('EntitySchema', bound=BaseModel)
-
-FilterSchema = TypeVar('FilterSchema', bound=BaseModel)
+from expense_control.base.types import Model, CreateSchema, UpdateSchema, EntitySchema, FilterSchema
+from expense_control.base.repository import BaseRepository
+from expense_control.base.mapper import EntityMapper
+from expense_control.base.condition import ConditionBuilder
 
 
-class BaseService(Generic[Model, CreateSchema, UpdateSchema]):
-    def __init__(self, model: Type[Model], entity_schema: Optional[Type[EntitySchema]], database_session: AsyncSession):
-        self.model = model
-        self.database_session = database_session
-        self.entity_schema = entity_schema
+class BaseService(Generic[Model, CreateSchema, UpdateSchema, EntitySchema, FilterSchema]):
+    def __init__(
+            self,
+            repository: BaseRepository[Model],
+            mapper: EntityMapper[Model, EntitySchema],
+            condition_builder: ConditionBuilder[Model]
+    ):
+        self.repository = repository
+        self.mapper = mapper
+        self.condition_builder = condition_builder
 
-    async def get_by_id(self, obj_id: int, type_ret: bool = True) -> EntitySchema | Model:
-        table_obj: Optional[Model] = await self.database_session.get(self.model, obj_id)
+    async def get_by_id(self, obj_id: int) -> EntitySchema:
+        entity = await self.repository.get_by_id(obj_id)
+        return self.mapper.to_schema(entity)
 
-        if not table_obj:
-            raise NoResultFound
-        return self.entity_schema.from_orm(table_obj) if type_ret else table_obj
-
-    async def get_all(self, filters: FilterSchema or None = None) -> Optional[list[EntitySchema]]:
-        query = select(self.model)
-
-        if conditions := await self.get_conditions(filters):
-            query = query.where(and_(*conditions))
-
-        result_objs = await self.database_session.execute(query)
-
-        if not (result_objs := result_objs.scalars().all()):
-            raise NoResultFound
-
-        return [self.entity_schema.from_orm(res_obj) for res_obj in result_objs]
+    async def get_all(self, filters: FilterSchema | None = None) -> list[EntitySchema] | None:
+        conditions = await self.condition_builder.build_condition(filters) if filters else []
+        result_objs = await self.repository.get_all(conditions)
+        return self.mapper.to_schemas(result_objs)
 
     async def create(self, obj: CreateSchema) -> EntitySchema:
-        table_obj = self.model(**obj.model_dump())
-        self.database_session.add(table_obj)
-
-        await self.database_session.commit()
-        await self.database_session.refresh(table_obj)
-
-        return self.entity_schema.from_orm(table_obj)
+        entity = self.repository.model(**obj.model_dump())
+        await self.repository.add(entity)
+        return self.mapper.to_schema(entity)
 
     async def update(self, obj_id: int, obj: UpdateSchema | CreateSchema) -> None:
-        table_obj = await self.get_by_id(obj_id, type_ret=False)
-        for key, value in obj.dict(exclude_none=True).items():
-            setattr(table_obj, key, value)
-
-        await self.database_session.commit()
-        await self.database_session.refresh(table_obj)
+        entity = await self.repository.get_by_id(obj_id)
+        for key, value in obj.model_dump(exclude_none=True).items():
+            setattr(entity, key, value)
+        await self.repository.add(entity)
 
     async def delete(self, obj_id: int) -> None:
-        table_obj = await self.get_by_id(obj_id, type_ret=False)
-
-        await self.database_session.delete(table_obj)
-        await self.database_session.commit()
-
-    async def get_conditions(self, filters: FilterSchema) -> list[BinaryExpression] or list:
-        conditions = []
-        for field, value in filters.model_dump(exclude_none=True).items():
-            if isinstance(value, dict):
-                column = getattr(self.model, field)
-                for operand, val in value.items():
-                    if operand == 'gt':
-                        conditions.append(column > val)
-                    elif operand == 'lt':
-                        conditions.append(column < val)
-            elif hasattr(self.model, field):
-                column = getattr(self.model, field)
-                conditions.append(column == value)
-        return conditions
+        entity = await self.repository.get_by_id(obj_id)
+        await self.repository.delete(entity)

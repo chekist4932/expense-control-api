@@ -1,6 +1,8 @@
 from pydantic import BaseModel
 from datetime import datetime
 
+from expense_control.base.schemas import ConditionsFloat, BaseFilter
+
 
 class ExpenseBase(BaseModel):
     type: bool
@@ -34,3 +36,12 @@ class ExpenseItem(BaseModel):
     category: str
     amount: float
     timestamp: datetime
+
+
+class ExpenseFilter(BaseFilter):
+    id: int | None = None
+    type: bool | None = None
+    category: str | None = None
+    category_id: int | None = None
+    amount: ConditionsFloat | None = None
+    days: int | None = None
