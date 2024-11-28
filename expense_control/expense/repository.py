@@ -1,14 +1,19 @@
 from typing import Any, override
-
+from fastapi import Depends
 from sqlalchemy import BinaryExpression, Row, RowMapping, select, and_
 from sqlalchemy.exc import NoResultFound
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from expense_control.base import BaseRepository
 from expense_control.expense.model import Expense
 from expense_control.category.model import Category
+from expense_control.database import get_async_session
 
 
 class ExpenseRepository(BaseRepository[Expense]):
+
+    def __init__(self, session: AsyncSession):
+        super().__init__(Expense, session)
 
     @override
     async def get_all(self, conditions: list[BinaryExpression] | None = None) -> Row[Any] | RowMapping | Any:
@@ -30,3 +35,7 @@ class ExpenseRepository(BaseRepository[Expense]):
             raise NoResultFound
 
         return result_objs
+
+
+async def get_repository(session: AsyncSession = Depends(get_async_session)) -> ExpenseRepository:
+    return ExpenseRepository(session)

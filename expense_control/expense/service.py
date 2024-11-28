@@ -1,9 +1,6 @@
 from fastapi import Depends
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from typing import override
-
-from expense_control.database import get_async_session
 
 from expense_control.base import BaseService
 from expense_control.expense.model import Expense
@@ -11,9 +8,9 @@ from expense_control.expense.schemas import (
     ExpenseCreate, ExpenseUpdate, ExpenseItem, ExpenseSchema)
 
 from expense_control.expense.schemas import ExpenseFilter
-from expense_control.expense.repository import ExpenseRepository
+from expense_control.expense.repository import ExpenseRepository, get_repository
 from expense_control.expense.mapper import ExpenseMapper
-from expense_control.expense.condition import ExpenseConditionBuilder
+from expense_control.expense.condition import ExpenseConditionBuilder, get_condition_builder
 
 
 class ExpenseService(BaseService[Expense, ExpenseCreate, ExpenseUpdate, ExpenseItem | ExpenseSchema, ExpenseFilter]):
@@ -36,10 +33,9 @@ class GetExpenseService:
     def __init__(self, entity_schema: ExpenseSchema | ExpenseItem = None) -> None:
         self.entity_schema = entity_schema
 
-    def __call__(self, session: AsyncSession = Depends(get_async_session)) -> ExpenseService:
-        repository = ExpenseRepository(Expense, session)  # Передается неявно
+    def __call__(self,
+                 repository: ExpenseRepository = Depends(get_repository),
+                 condition_builder: ExpenseConditionBuilder = Depends(get_condition_builder)
+                 ) -> ExpenseService:
         mapper = ExpenseMapper(self.entity_schema)  # Передается неявно. И что делать, когда схема None
-        condition_builder = ExpenseConditionBuilder(Expense)  # Передается неявно
         return ExpenseService(repository, mapper, condition_builder)
-
-# Мб создать файлы mapper.py, repository.py и move filters.py -> condition.py

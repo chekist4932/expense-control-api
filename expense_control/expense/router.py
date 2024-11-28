@@ -1,4 +1,4 @@
-from typing import Optional, Annotated
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
 
@@ -24,14 +24,14 @@ async def get_expense_by_id(
 @expense_router.get('/', response_model=list[ExpenseItem])
 async def get_expense_all(filters: Annotated[ExpenseFilter, Query()],
                           expense_servie: ExpenseService = Depends(GetExpenseService(ExpenseItem))
-                          ) -> Optional[list[ExpenseItem]]:
+                          ) -> list[ExpenseItem]:
     return await expense_servie.get_all(filters)
 
 
 @expense_router.post('/', response_model=ExpenseSchema)
 async def create_expense(expense: ExpenseCreate,
                          expense_servie: ExpenseService = Depends(GetExpenseService(ExpenseSchema))
-                         ) -> Optional[ExpenseSchema]:
+                         ) -> ExpenseSchema:
     return await expense_servie.create(expense)
 
 
@@ -42,7 +42,7 @@ async def update_expense(expense_id: int, expense: ExpenseUpdate,
     return await expense_servie.update(expense_id, expense)
 
 
-@expense_router.put('/{expense_id}', status_code=204)
+@expense_router.put('/{expense_id}', status_code=201)
 async def update_expense_full(expense_id: int, expense: ExpenseCreate,
                               expense_servie: ExpenseService = Depends(GetExpenseService())
                               ) -> None:
@@ -51,5 +51,6 @@ async def update_expense_full(expense_id: int, expense: ExpenseCreate,
 
 @expense_router.delete('/{expense_id}', status_code=204)
 async def delete_expense(expense_id: int,
-                         expense_servie: ExpenseService = Depends(GetExpenseService())) -> None:
+                         expense_servie: ExpenseService = Depends(GetExpenseService())
+                         ) -> None:
     return await expense_servie.delete(expense_id)

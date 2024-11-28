@@ -11,6 +11,9 @@ from expense_control.category.model import Category
 
 
 class ExpenseConditionBuilder(ConditionBuilder[Expense]):
+    def __init__(self):
+        super().__init__(Expense)
+
     @override
     async def build_condition(self, filters: ExpenseFilter) -> list[BinaryExpression]:
         conditions = []
@@ -32,3 +35,10 @@ class ExpenseConditionBuilder(ConditionBuilder[Expense]):
                 column = getattr(self.model, field)
                 conditions.append(column == value)
         return conditions
+
+
+# condition_builder = ExpenseConditionBuilder()
+
+
+async def get_condition_builder():
+    return ExpenseConditionBuilder()
