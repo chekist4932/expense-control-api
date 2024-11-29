@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Dict, List
 
 from fastapi import APIRouter, Depends, Query
 
@@ -10,6 +10,7 @@ from expense_control.expense.schemas import (
     ExpenseItem,
     ExpenseFilter
 )
+from expense_control.base.schemas import PaginatedResponse
 
 expense_router = APIRouter(prefix='/expense', tags=['expense'])
 
@@ -21,13 +22,17 @@ async def get_expense_by_id(
     return await expense_servie.get_by_id(expense_id)
 
 
-@expense_router.get('/', response_model=list[ExpenseItem])
+@expense_router.get('/', response_model=PaginatedResponse[ExpenseItem])
 async def get_expense_all(filters: Annotated[ExpenseFilter, Query()] = None,
                           expense_servie: ExpenseService = Depends(GetExpenseService(ExpenseItem)),
                           limit: int = Query(100, ge=0),
                           offset: int = Query(0, ge=0)
-                          ) -> list[ExpenseItem]:
-    return await expense_servie.get_all(filters, limit, offset)
+                          ) -> dict[str, int | list[ExpenseItem]]:
+    items = await expense_servie.get_all(filters, limit, offset)
+    return {
+        'count': len(items),
+        'items': items
+    }
 
 
 @expense_router.post('/', response_model=ExpenseSchema)

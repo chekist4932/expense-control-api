@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Dict, List
 
 from fastapi import APIRouter, Depends, Query
 
@@ -7,10 +7,11 @@ from expense_control.category.service import CategoryService, GetCategoryService
 from expense_control.category.schemas import (
     CategorySchema,
     CategoryCreate,
-    CategoryUpdate
+    CategoryUpdate,
+    CategoryFilter
 )
 
-from expense_control.category.schemas import CategoryFilter
+from expense_control.base.schemas import PaginatedResponse
 
 category_router = APIRouter(prefix='/category', tags=['category'])
 
@@ -22,13 +23,17 @@ async def get_category_by_id(
     return await category_servie.get_by_id(category_id)
 
 
-@category_router.get('/', response_model=list[CategorySchema])
+@category_router.get('/', response_model=PaginatedResponse[CategorySchema])
 async def get_category_all(filters: Annotated[CategoryFilter, Query()] = None,
                            category_servie: CategoryService = Depends(GetCategoryService(CategorySchema)),
                            limit: int = Query(100, ge=0),
                            offset: int = Query(0, ge=0)
-                           ) -> list[CategorySchema]:
-    return await category_servie.get_all(filters, limit, offset)
+                           ) -> dict[str, int | list[CategorySchema] | None]:
+    items = await category_servie.get_all(filters, limit, offset)
+    return {
+        'count': len(items),
+        'items': items
+    }
 
 
 @category_router.post('/', response_model=CategorySchema)

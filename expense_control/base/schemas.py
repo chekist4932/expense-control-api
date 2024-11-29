@@ -1,9 +1,10 @@
 from json import loads
 from types import UnionType
+from typing import get_origin, Union, get_args, Any, Generic
 
-from typing import get_origin, Union, get_args, Any
+from pydantic import BaseModel, field_validator, Field
 
-from pydantic import BaseModel, field_validator
+from expense_control.base.types import EntitySchema
 
 
 class Conditions(BaseModel):
@@ -40,3 +41,8 @@ class BaseFilter(BaseModel):
             return field_type.validate_operand_field(field_value)
 
         return field_value
+
+
+class PaginatedResponse(BaseModel, Generic[EntitySchema]):
+    count: int = Field(description='Number of items returned in the response')
+    items: list[EntitySchema] = Field(description='List of items returned in the response following given criteria')
