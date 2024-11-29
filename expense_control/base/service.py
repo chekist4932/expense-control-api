@@ -10,8 +10,8 @@ class BaseService(Generic[Model, CreateSchema, UpdateSchema, EntitySchema, Filte
     def __init__(
             self,
             repository: BaseRepository[Model],
-            mapper: EntityMapper[Model, EntitySchema],
-            condition_builder: ConditionBuilder[Model]
+            condition_builder: ConditionBuilder[Model],
+            mapper: EntityMapper[Model, EntitySchema] | None
     ):
         self.repository = repository
         self.mapper = mapper

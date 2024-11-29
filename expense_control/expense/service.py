@@ -1,6 +1,6 @@
 from fastapi import Depends
 
-from typing import override
+from typing import override, Type
 
 from expense_control.base import BaseService
 from expense_control.expense.model import Expense
@@ -16,9 +16,9 @@ from expense_control.expense.condition import ExpenseConditionBuilder, get_condi
 class ExpenseService(BaseService[Expense, ExpenseCreate, ExpenseUpdate, ExpenseItem | ExpenseSchema, ExpenseFilter]):
     def __init__(self,
                  repository: ExpenseRepository,
-                 mapper: ExpenseMapper,
-                 condition_builder: ExpenseConditionBuilder):
-        super().__init__(repository, mapper, condition_builder)
+                 condition_builder: ExpenseConditionBuilder,
+                 mapper: ExpenseMapper | None):
+        super().__init__(repository, condition_builder, mapper)
 
     @override
     async def get_all(self, filters: ExpenseFilter = None) -> list[ExpenseItem]:
@@ -30,12 +30,13 @@ class ExpenseService(BaseService[Expense, ExpenseCreate, ExpenseUpdate, ExpenseI
 class GetExpenseService:
     """Get ExpenseService object with entity schema we needed"""
 
-    def __init__(self, entity_schema: ExpenseSchema | ExpenseItem = None) -> None:
+    def __init__(self, entity_schema: Type[ExpenseSchema | ExpenseItem] = None) -> None:
         self.entity_schema = entity_schema
 
     def __call__(self,
                  repository: ExpenseRepository = Depends(get_repository),
                  condition_builder: ExpenseConditionBuilder = Depends(get_condition_builder)
                  ) -> ExpenseService:
-        mapper = ExpenseMapper(self.entity_schema)  # Передается неявно. И что делать, когда схема None
-        return ExpenseService(repository, mapper, condition_builder)
+        if self.entity_schema:
+            return ExpenseService(repository, condition_builder, ExpenseMapper(self.entity_schema))
+        return ExpenseService(repository, condition_builder, None)

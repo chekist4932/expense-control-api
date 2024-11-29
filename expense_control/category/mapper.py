@@ -1,5 +1,4 @@
 from expense_control.base import EntityMapper
-
 from expense_control.category.model import Category
 from expense_control.category.schemas import CategorySchema
 

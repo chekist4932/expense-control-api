@@ -37,8 +37,9 @@ class ExpenseConditionBuilder(ConditionBuilder[Expense]):
         return conditions
 
 
-# condition_builder = ExpenseConditionBuilder()
+condition_builder = ExpenseConditionBuilder()
 
 
 async def get_condition_builder():
-    return ExpenseConditionBuilder()
+    # return ExpenseConditionBuilder()
+    return condition_builder

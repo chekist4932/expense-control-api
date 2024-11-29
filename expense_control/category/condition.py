@@ -8,8 +8,9 @@ class CategoryConditionBuilder(ConditionBuilder[Category]):
         super().__init__(Category)
 
 
-# condition_builder = CategoryConditionBuilder()
+condition_builder = CategoryConditionBuilder()
 
 
 async def get_condition_builder():
-    return CategoryConditionBuilder()
+    # return CategoryConditionBuilder()
+    return condition_builder
