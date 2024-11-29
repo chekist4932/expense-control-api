@@ -22,10 +22,12 @@ async def get_expense_by_id(
 
 
 @expense_router.get('/', response_model=list[ExpenseItem])
-async def get_expense_all(filters: Annotated[ExpenseFilter, Query()],
-                          expense_servie: ExpenseService = Depends(GetExpenseService(ExpenseItem))
+async def get_expense_all(filters: Annotated[ExpenseFilter, Query()] = None,
+                          expense_servie: ExpenseService = Depends(GetExpenseService(ExpenseItem)),
+                          limit: int = Query(100, ge=0),
+                          offset: int = Query(0, ge=0)
                           ) -> list[ExpenseItem]:
-    return await expense_servie.get_all(filters)
+    return await expense_servie.get_all(filters, limit, offset)
 
 
 @expense_router.post('/', response_model=ExpenseSchema)

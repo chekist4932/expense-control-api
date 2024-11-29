@@ -21,9 +21,12 @@ class ExpenseService(BaseService[Expense, ExpenseCreate, ExpenseUpdate, ExpenseI
         super().__init__(repository, condition_builder, mapper)
 
     @override
-    async def get_all(self, filters: ExpenseFilter = None) -> list[ExpenseItem]:
+    async def get_all(self, filters: ExpenseFilter = None,
+                      limit: int = 100,
+                      offset: int = 0
+                      ) -> list[ExpenseItem]:
         conditions = await self.condition_builder.build_condition(filters) if filters else []
-        result_objs = await self.repository.get_all(conditions)
+        result_objs = await self.repository.get_all(conditions, limit, offset)
         return self.mapper.to_schemas(result_objs)
 
 

@@ -21,9 +21,12 @@ class BaseService(Generic[Model, CreateSchema, UpdateSchema, EntitySchema, Filte
         entity = await self.repository.get_by_id(obj_id)
         return self.mapper.to_schema(entity)
 
-    async def get_all(self, filters: FilterSchema | None = None) -> list[EntitySchema] | None:
+    async def get_all(self, filters: FilterSchema | None = None,
+                      limit: int = 100,
+                      offset: int = 0
+                      ) -> list[EntitySchema] | None:
         conditions = await self.condition_builder.build_condition(filters) if filters else []
-        result_objs = await self.repository.get_all(conditions)
+        result_objs = await self.repository.get_all(conditions, limit, offset)
         return self.mapper.to_schemas(result_objs)
 
     async def create(self, obj: CreateSchema) -> EntitySchema:

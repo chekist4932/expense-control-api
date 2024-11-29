@@ -12,7 +12,6 @@ from expense_control.category.schemas import (
 
 from expense_control.category.schemas import CategoryFilter
 
-
 category_router = APIRouter(prefix='/category', tags=['category'])
 
 
@@ -24,10 +23,12 @@ async def get_category_by_id(
 
 
 @category_router.get('/', response_model=list[CategorySchema])
-async def get_category_all(filters: Annotated[CategoryFilter, Query()],
-                           category_servie: CategoryService = Depends(GetCategoryService(CategorySchema))
+async def get_category_all(filters: Annotated[CategoryFilter, Query()] = None,
+                           category_servie: CategoryService = Depends(GetCategoryService(CategorySchema)),
+                           limit: int = Query(100, ge=0),
+                           offset: int = Query(0, ge=0)
                            ) -> list[CategorySchema]:
-    return await category_servie.get_all(filters)
+    return await category_servie.get_all(filters, limit, offset)
 
 
 @category_router.post('/', response_model=CategorySchema)

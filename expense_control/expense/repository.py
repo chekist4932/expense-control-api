@@ -16,7 +16,10 @@ class ExpenseRepository(BaseRepository[Expense]):
         super().__init__(Expense, session)
 
     @override
-    async def get_all(self, conditions: list[BinaryExpression] | None = None) -> Row[Any] | RowMapping | Any:
+    async def get_all(self, conditions: list[BinaryExpression] | None = None,
+                      limit: int = 100,
+                      offset: int = 0
+                      ) -> Row[Any] | RowMapping | Any:
         query = (
             select(self.model.id,
                    self.model.type,
@@ -24,7 +27,7 @@ class ExpenseRepository(BaseRepository[Expense]):
                    self.model.timestamp,
                    self.model.category_id,
                    Category.name.label('category'))  # Передается неявно
-            .join(Category)
+            .join(Category).limit(limit).offset(offset).order_by(self.model.id)
         )
 
         if conditions:

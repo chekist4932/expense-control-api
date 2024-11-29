@@ -50,8 +50,11 @@ class BaseRepository(Generic[Model], metaclass=AttributeCheckerMeta):
             raise NoResultFound
         return obj
 
-    async def get_all(self, conditions: list[BinaryExpression] | None = None) -> Row[Any] | RowMapping | Any:
-        query = select(self.model)
+    async def get_all(self, conditions: list[BinaryExpression] | None = None,
+                      limit: int = 100,
+                      offset: int = 0
+                      ) -> Row[Any] | RowMapping | Any:
+        query = select(self.model).limit(limit).offset(offset).order_by(self.model.id)
 
         if conditions:
             query = query.filter(and_(*conditions))
